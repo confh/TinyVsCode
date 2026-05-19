@@ -621,6 +621,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
     await initTreeSitter(context);
 
+    registerTinyFormatter(context);
     registerTinySemanticTokens(context);
     registerTinyCompletions(context);
     registerTinyHoverProvider(context);
@@ -835,6 +836,176 @@ async function checkImportedMemberAccess(
             vscode.DiagnosticSeverity.Error
         ));
     });
+}
+
+function registerTinyFormatter(context: vscode.ExtensionContext) {
+    const provider = vscode.languages.registerDocumentFormattingEditProvider(
+        "tiny",
+        {
+            provideDocumentFormattingEdits(document) {
+                const originalText = document.getText();
+                const formattedText = formatTinyCode(originalText);
+
+                const fullRange = new vscode.Range(
+                    document.positionAt(0),
+                    document.positionAt(originalText.length)
+                );
+
+                return [
+                    vscode.TextEdit.replace(fullRange, formattedText)
+                ];
+            }
+        }
+    );
+
+    context.subscriptions.push(provider);
+}
+
+function formatTinyCode(source: string): string {
+    const lines = source.replace(/\r\n/g, "\n").split("\n");
+
+    let indentLevel = 0;
+    const formattedLines: string[] = [];
+
+    for (const rawLine of lines) {
+        const trimmed = rawLine.trim();
+
+        if (trimmed.length === 0) {
+            formattedLines.push("");
+            continue;
+        }
+
+        if (startsWithClosingBrace(trimmed)) {
+            indentLevel = Math.max(0, indentLevel - 1);
+        }
+
+        const formattedLine = formatTinyLine(trimmed);
+        formattedLines.push(`${"    ".repeat(indentLevel)}${formattedLine}`);
+
+        indentLevel += countOpeningBracesOutsideStrings(trimmed);
+        indentLevel -= countClosingBracesOutsideStrings(trimmed);
+
+        if (startsWithClosingBrace(trimmed)) {
+            indentLevel += 1;
+        }
+
+        indentLevel = Math.max(0, indentLevel);
+    }
+
+    return formattedLines.join("\n").trimEnd() + "\n";
+}
+
+function startsWithClosingBrace(line: string): boolean {
+    return line.startsWith("}") || line.startsWith("];") || line.startsWith(")");
+}
+
+function formatTinyLine(line: string): string {
+    return line
+        // collapse repeated spaces, but only outside strings would be better later
+        .replace(/\s+/g, " ")
+
+        // operators
+        .replace(/\s*(==|!=|<=|>=|\+=|-=|\*=|\/=)\s*/g, " $1 ")
+        .replace(/\s*=\s*/g, " = ")
+        .replace(/\s*([+\-*/%<>])\s*/g, " $1 ")
+
+        // commas and colons
+        .replace(/\s*,\s*/g, ", ")
+        .replace(/\s*:\s*/g, ": ")
+
+        // semicolon
+        .replace(/\s*;\s*$/g, ";")
+
+        // dots should never have spaces around them
+        .replace(/\s*\.\s*/g, ".")
+
+        // remove spaces directly inside parens/brackets
+        .replace(/\(\s+/g, "(")
+        .replace(/\s+\)/g, ")")
+        .replace(/\[\s+/g, "[")
+        .replace(/\s+\]/g, "]")
+
+        // normalize function/method calls
+        .replace(/\b([a-zA-Z_][a-zA-Z0-9_]*)\s+\(/g, "$1(")
+
+        // normalize block opening
+        .replace(/\s*\{\s*$/g, " {")
+        .replace(/^else\s+\{/g, "else {")
+        .replace(/^try\s+\{/g, "try {")
+        .replace(/^finally\s+\{/g, "finally {")
+        .replace(/^catch\s+([a-zA-Z_][a-zA-Z0-9_]*)\s+\{/g, "catch $1 {")
+
+        .trim();
+}
+
+function countOpeningBracesOutsideStrings(line: string): number {
+    let count = 0;
+    let inString = false;
+    let inBacktick = false;
+    let escaped = false;
+
+    for (const char of line) {
+        if (escaped) {
+            escaped = false;
+            continue;
+        }
+
+        if (char === "\\") {
+            escaped = true;
+            continue;
+        }
+
+        if (char === "\"" && !inBacktick) {
+            inString = !inString;
+            continue;
+        }
+
+        if (char === "`" && !inString) {
+            inBacktick = !inBacktick;
+            continue;
+        }
+
+        if (!inString && !inBacktick && char === "{") {
+            count++;
+        }
+    }
+
+    return count;
+}
+
+function countClosingBracesOutsideStrings(line: string): number {
+    let count = 0;
+    let inString = false;
+    let inBacktick = false;
+    let escaped = false;
+
+    for (const char of line) {
+        if (escaped) {
+            escaped = false;
+            continue;
+        }
+
+        if (char === "\\") {
+            escaped = true;
+            continue;
+        }
+
+        if (char === "\"" && !inBacktick) {
+            inString = !inString;
+            continue;
+        }
+
+        if (char === "`" && !inString) {
+            inBacktick = !inBacktick;
+            continue;
+        }
+
+        if (!inString && !inBacktick && char === "}") {
+            count++;
+        }
+    }
+
+    return count;
 }
 
 function registerTinySemanticTokens(context: vscode.ExtensionContext) {
