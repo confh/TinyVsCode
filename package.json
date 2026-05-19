@@ -1,0 +1,60 @@
+{
+    "name": "tiny",
+    "displayName": "Tiny",
+    "description": "Extension for Tiny.",
+    "publisher": "confis",
+    "version": "0.0.1",
+    "engines": {
+        "vscode": "^1.90.0"
+    },
+    "categories": [
+        "Programming Languages"
+    ],
+    "activationEvents": [
+        "onLanguage:tiny",
+        "onCommand:tinyTreeSitter.showSyntaxTree"
+    ],
+    "icon": "icon.png",
+    "main": "./out/extension.js",
+    "contributes": {
+        "grammars": [
+            {
+                "language": "tiny",
+                "scopeName": "source.tiny",
+                "path": "./syntaxes/tiny.tmLanguage.json"
+            }
+        ],
+        "languages": [
+            {
+                "id": "tiny",
+                "aliases": [
+                    "Tiny",
+                    "tiny"
+                ],
+                "extensions": [
+                    ".tiny"
+                ],
+                "configuration": "./language-configuration.json"
+            }
+        ],
+        "commands": [
+            {
+                "command": "tinyTreeSitter.showSyntaxTree",
+                "title": "Tiny: Show Syntax Tree"
+            }
+        ]
+    },
+    "scripts": {
+        "vscode:prepublish": "npm run compile",
+        "compile": "tsc -p ./",
+        "watch": "tsc -watch -p ./"
+    },
+    "devDependencies": {
+        "@types/node": "20.x",
+        "@types/vscode": "^1.90.0",
+        "typescript": "^5.9.3"
+    },
+    "dependencies": {
+        "web-tree-sitter": "^0.25.0"
+    }
+}
