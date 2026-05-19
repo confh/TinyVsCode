@@ -900,13 +900,175 @@ function startsWithClosingBrace(line: string): boolean {
 }
 
 function formatTinyLine(line: string): string {
-    return line
-        // collapse repeated spaces, but only outside strings would be better later
+    const { code, comment } = splitCodeAndComment(line);
+
+    const formattedCode = formatCodeOutsideStrings(code);
+
+    if (comment) {
+        if (formattedCode.trim().length === 0) {
+            return comment.trimEnd();
+        }
+
+        return `${formattedCode.trimEnd()} ${comment.trimEnd()}`;
+    }
+
+    return formattedCode.trim();
+}
+
+function splitCodeAndComment(line: string): { code: string; comment: string } {
+    let inDoubleString = false;
+    let inBacktickString = false;
+    let escaped = false;
+
+    for (let i = 0; i < line.length - 1; i++) {
+        const char = line[i];
+        const next = line[i + 1];
+
+        if (escaped) {
+            escaped = false;
+            continue;
+        }
+
+        if (char === "\\") {
+            escaped = true;
+            continue;
+        }
+
+        if (char === "\"" && !inBacktickString) {
+            inDoubleString = !inDoubleString;
+            continue;
+        }
+
+        if (char === "`" && !inDoubleString) {
+            inBacktickString = !inBacktickString;
+            continue;
+        }
+
+        if (!inDoubleString && !inBacktickString && char === "/" && next === "/") {
+            return {
+                code: line.slice(0, i),
+                comment: line.slice(i)
+            };
+        }
+    }
+
+    return {
+        code: line,
+        comment: ""
+    };
+}
+
+function formatCodeOutsideStrings(code: string): string {
+    const parts = splitStringParts(code);
+
+    return parts
+        .map(part => {
+            if (part.isString) {
+                return part.text;
+            }
+
+            return formatCodeOnlyPart(part.text);
+        })
+        .join("");
+}
+
+function splitStringParts(code: string): Array<{ text: string; isString: boolean }> {
+    const parts: Array<{ text: string; isString: boolean }> = [];
+
+    let current = "";
+    let inDoubleString = false;
+    let inBacktickString = false;
+    let escaped = false;
+
+    for (let i = 0; i < code.length; i++) {
+        const char = code[i];
+
+        current += char;
+
+        if (escaped) {
+            escaped = false;
+            continue;
+        }
+
+        if (char === "\\") {
+            escaped = true;
+            continue;
+        }
+
+        if (char === "\"" && !inBacktickString) {
+            if (!inDoubleString) {
+                const beforeString = current.slice(0, -1);
+
+                if (beforeString.length > 0) {
+                    parts.push({
+                        text: beforeString,
+                        isString: false
+                    });
+                }
+
+                current = "\"";
+                inDoubleString = true;
+            } else {
+                parts.push({
+                    text: current,
+                    isString: true
+                });
+
+                current = "";
+                inDoubleString = false;
+            }
+
+            continue;
+        }
+
+        if (char === "`" && !inDoubleString) {
+            if (!inBacktickString) {
+                const beforeString = current.slice(0, -1);
+
+                if (beforeString.length > 0) {
+                    parts.push({
+                        text: beforeString,
+                        isString: false
+                    });
+                }
+
+                current = "`";
+                inBacktickString = true;
+            } else {
+                parts.push({
+                    text: current,
+                    isString: true
+                });
+
+                current = "";
+                inBacktickString = false;
+            }
+
+            continue;
+        }
+    }
+
+    if (current.length > 0) {
+        parts.push({
+            text: current,
+            isString: inDoubleString || inBacktickString
+        });
+    }
+
+    return parts;
+}
+
+function formatCodeOnlyPart(code: string): string {
+    return code
         .replace(/\s+/g, " ")
 
-        // operators
+        // multi-character operators first
         .replace(/\s*(==|!=|<=|>=|\+=|-=|\*=|\/=)\s*/g, " $1 ")
+
+        // assignment
         .replace(/\s*=\s*/g, " = ")
+
+        // arithmetic/comparison
         .replace(/\s*([+\-*/%<>])\s*/g, " $1 ")
 
         // commas and colons
@@ -916,26 +1078,24 @@ function formatTinyLine(line: string): string {
         // semicolon
         .replace(/\s*;\s*$/g, ";")
 
-        // dots should never have spaces around them
+        // dots should never have spaces
         .replace(/\s*\.\s*/g, ".")
 
-        // remove spaces directly inside parens/brackets
+        // remove spaces inside parens/brackets
         .replace(/\(\s+/g, "(")
         .replace(/\s+\)/g, ")")
         .replace(/\[\s+/g, "[")
         .replace(/\s+\]/g, "]")
 
-        // normalize function/method calls
+        // function calls
         .replace(/\b([a-zA-Z_][a-zA-Z0-9_]*)\s+\(/g, "$1(")
 
-        // normalize block opening
+        // block opening
         .replace(/\s*\{\s*$/g, " {")
         .replace(/^else\s+\{/g, "else {")
         .replace(/^try\s+\{/g, "try {")
         .replace(/^finally\s+\{/g, "finally {")
-        .replace(/^catch\s+([a-zA-Z_][a-zA-Z0-9_]*)\s+\{/g, "catch $1 {")
-
-        .trim();
+        .replace(/^catch\s+([a-zA-Z_][a-zA-Z0-9_]*)\s+\{/g, "catch $1 {");
 }
 
 function countOpeningBracesOutsideStrings(line: string): number {
