@@ -83,7 +83,7 @@
         },
         {
           "name": "keyword.control.flow.tiny",
-          "match": "\\b(return|if|else|while|for|in|match|break|continue)\\b"
+          "match": "\\b(return|if|else|while|for|instanceof|in|match|break|continue)\\b"
         },
         {
           "name": "keyword.control.exception.tiny",
