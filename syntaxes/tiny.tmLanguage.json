@@ -9,11 +9,28 @@
     { "include": "#enums" },
     { "include": "#classes" },
     { "include": "#functions" },
+    { "include": "#fields" },
     { "include": "#variables" },
     { "include": "#properties" },
     { "include": "#operators" }
   ],
   "repository": {
+    "expression": {
+      "patterns": [
+        { "include": "#comments" },
+        { "include": "#strings" },
+        { "include": "#numbers" },
+        { "include": "#keywords" },
+        { "include": "#types" },
+        { "include": "#enums" },
+        { "include": "#classes" },
+        { "include": "#functions" },
+        { "include": "#fields" },
+        { "include": "#variables" },
+        { "include": "#properties" },
+        { "include": "#operators" }
+      ]
+    },
     "comments": {
       "patterns": [
         {
@@ -36,9 +53,26 @@
           ]
         },
         {
+          "name": "string.quoted.single.tiny",
+          "begin": "'",
+          "end": "'",
+          "patterns": [
+            {
+              "name": "constant.character.escape.tiny",
+              "match": "\\\\."
+            }
+          ]
+        },
+        {
           "name": "string.interpolated.backtick.tiny",
           "begin": "`",
+          "beginCaptures": {
+            "0": { "name": "punctuation.definition.string.begin.tiny" }
+          },
           "end": "`",
+          "endCaptures": {
+            "0": { "name": "punctuation.definition.string.end.tiny" }
+          },
           "patterns": [
             {
               "name": "constant.character.escape.tiny",
@@ -47,16 +81,16 @@
             {
               "name": "meta.interpolation.tiny",
               "begin": "\\$\\{",
+              "beginCaptures": {
+                "0": { "name": "punctuation.section.interpolation.begin.tiny" }
+              },
               "end": "\\}",
+              "endCaptures": {
+                "0": { "name": "punctuation.section.interpolation.end.tiny" }
+              },
+              "contentName": "source.tiny.embedded.expression",
               "patterns": [
-                { "include": "#strings" },
-                { "include": "#numbers" },
-                { "include": "#keywords" },
-                { "include": "#types" },
-                { "include": "#properties" },
-                { "include": "#functions" },
-                { "include": "#variables" },
-                { "include": "#operators" }
+                { "include": "#expression" }
               ]
             }
           ]
@@ -66,8 +100,12 @@
     "numbers": {
       "patterns": [
         {
-          "name": "constant.numeric.tiny",
-          "match": "\\b\\d+(\\.\\d+)?\\b"
+          "name": "constant.numeric.float.tiny",
+          "match": "\\b\\d+\\.\\d+\\b"
+        },
+        {
+          "name": "constant.numeric.integer.tiny",
+          "match": "\\b\\d+\\b"
         }
       ]
     },
@@ -79,11 +117,11 @@
         },
         {
           "name": "keyword.control.declaration.tiny",
-          "match": "\\b(class|enum|embed|fn|let|const)\\b"
+          "match": "\\b(class|enum|embed|fn|let|const|namespace)\\b"
         },
         {
           "name": "keyword.control.flow.tiny",
-          "match": "\\b(return|if|else|while|for|instanceof|in|match|break|continue)\\b"
+          "match": "\\b(return|if|else|while|for|instanceof|in|match|break|continue|field|private|public)\\b"
         },
         {
           "name": "keyword.control.exception.tiny",
@@ -115,15 +153,19 @@
       "patterns": [
         {
           "name": "support.type.primitive.tiny",
-          "match": "\\b(string|number|bool|boolean|array|object|undefined|null|unknown|task|Task)\\b"
+          "match": "\\b(string|number|bool|boolean|array|object|any|unknown|void|undefined|null|error|task|Task)\\b"
         },
         {
-          "name": "entity.name.type.annotation.tiny",
-          "match": "(?<=:\\s*)[a-zA-Z_][a-zA-Z0-9_]*(?:<[^>]+>)?"
+          "name": "meta.type.annotation.tiny",
+          "match": "(:)\\s*([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)?(?:<[^>]+>)?)",
+          "captures": {
+            "1": { "name": "punctuation.separator.type.tiny" },
+            "2": { "name": "entity.name.type.annotation.tiny" }
+          }
         },
         {
           "name": "entity.name.type.generic.tiny",
-          "match": "\\b[A-Z][a-zA-Z0-9_]*(?=\\s*<)"
+          "match": "\\b[A-Z][A-Za-z0-9_]*(?=\\s*<)"
         }
       ]
     },
@@ -131,16 +173,14 @@
       "patterns": [
         {
           "name": "meta.class.tiny",
-          "match": "\\bclass\\s+([A-Z][a-zA-Z0-9_]*)",
+          "match": "\\bclass\\s+([A-Z][A-Za-z0-9_]*)",
           "captures": {
-            "1": {
-              "name": "entity.name.type.class.tiny"
-            }
+            "1": { "name": "entity.name.type.class.tiny" }
           }
         },
         {
           "name": "entity.name.type.class.constructor.tiny",
-          "match": "\\b[A-Z][a-zA-Z0-9_]*(?=\\s*\\()"
+          "match": "\\b[A-Z][A-Za-z0-9_]*(?=\\s*\\()"
         }
       ]
     },
@@ -148,16 +188,10 @@
       "patterns": [
         {
           "name": "meta.enum.tiny",
-          "match": "\\benum\\s+([A-Z][a-zA-Z0-9_]*)",
+          "match": "\\benum\\s+([A-Z][A-Za-z0-9_]*)",
           "captures": {
-            "1": {
-              "name": "entity.name.type.enum.tiny"
-            }
+            "1": { "name": "entity.name.type.enum.tiny" }
           }
-        },
-        {
-          "name": "constant.other.enum.member.tiny",
-          "match": "(?<=\\.)[A-Z]?[a-zA-Z_][a-zA-Z0-9_]*"
         }
       ]
     },
@@ -165,33 +199,48 @@
       "patterns": [
         {
           "name": "meta.function.declaration.tiny",
-          "match": "\\bfn\\s+([a-zA-Z_][a-zA-Z0-9_]*)",
+          "match": "\\bfn\\s+([A-Za-z_][A-Za-z0-9_]*)",
           "captures": {
-            "1": {
-              "name": "entity.name.function.tiny"
-            }
+            "1": { "name": "entity.name.function.tiny" }
           }
         },
         {
+          "name": "entity.name.function.method-call.tiny",
+          "match": "(?<=\\.)[A-Za-z_][A-Za-z0-9_]*(?=\\s*\\()"
+        },
+        {
           "name": "entity.name.function.call.tiny",
-          "match": "\\b[a-zA-Z_][a-zA-Z0-9_]*(?=\\s*\\()"
+          "match": "\\b[A-Za-z_][A-Za-z0-9_]*(?=\\s*\\()"
+        }
+      ]
+    },
+    "fields": {
+      "patterns": [
+        {
+          "name": "meta.field.declaration.tiny",
+          "match": "\\bfield\\s+([A-Za-z_][A-Za-z0-9_]*)",
+          "captures": {
+            "1": { "name": "variable.other.field.declaration.tiny" }
+          }
         }
       ]
     },
     "variables": {
       "patterns": [
         {
-          "name": "variable.other.declaration.tiny",
-          "match": "\\b(?:let|const)\\s+([a-zA-Z_][a-zA-Z0-9_]*)",
+          "name": "meta.variable.declaration.tiny",
+          "match": "\\b(?:let|const)\\s+([A-Za-z_][A-Za-z0-9_]*)",
           "captures": {
-            "1": {
-              "name": "variable.other.declaration.tiny"
-            }
+            "1": { "name": "variable.other.declaration.tiny" }
           }
         },
         {
           "name": "variable.parameter.tiny",
-          "match": "(?<=\\()\\s*[a-zA-Z_][a-zA-Z0-9_]*(?=\\s*(,|\\)))"
+          "match": "(?<=\\()\\s*[A-Za-z_][A-Za-z0-9_]*(?=\\s*(,|\\)|:))"
+        },
+        {
+          "name": "variable.other.read.tiny",
+          "match": "\\b(?!import|std|as|export|class|enum|embed|fn|let|const|return|if|else|while|for|instanceof|in|match|break|continue|field|private|public|try|catch|finally|throw|spawn|await|and|or|typeof|true|false|null|undefined|this\\b)[a-z_][A-Za-z0-9_]*\\b"
         }
       ]
     },
@@ -199,11 +248,11 @@
       "patterns": [
         {
           "name": "variable.other.property.tiny",
-          "match": "(?<=\\.)[a-zA-Z_][a-zA-Z0-9_]*"
+          "match": "(?<=\\.)[A-Za-z_][A-Za-z0-9_]*"
         },
         {
           "name": "variable.other.object.key.tiny",
-          "match": "\\b[a-zA-Z_][a-zA-Z0-9_]*(?=\\s*:)"
+          "match": "\\b[A-Za-z_][A-Za-z0-9_]*(?=\\s*:)"
         },
         {
           "name": "variable.other.object.key.string.tiny",
@@ -214,12 +263,16 @@
     "operators": {
       "patterns": [
         {
+          "name": "keyword.operator.arrow.tiny",
+          "match": "=>"
+        },
+        {
           "name": "keyword.operator.comparison.tiny",
           "match": "(==|!=|<=|>=|<|>)"
         },
         {
           "name": "keyword.operator.assignment.tiny",
-          "match": "(=|\\+=|-=|\\*=|/=)"
+          "match": "(\\+=|-=|\\*=|/=|=)"
         },
         {
           "name": "keyword.operator.arithmetic.tiny",
@@ -236,10 +289,6 @@
         {
           "name": "punctuation.bracket.tiny",
           "match": "(\\{|\\}|\\(|\\)|\\[|\\])"
-        },
-        {
-          "name": "keyword.operator.arrow.tiny",
-          "match": "=>"
         }
       ]
     }
