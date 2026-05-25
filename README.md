@@ -260,7 +260,6 @@ class Post {
     fn init(title: string) {
         this.title = title;
         this.status = Status.Draft;
-        return this;
     }
 
     fn publish() {
