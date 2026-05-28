@@ -27,7 +27,7 @@ Tiny files get clean highlighting for:
 - operators
 - std modules
 
-```tiny
+```js
 import std "io";
 
 class Counter {
@@ -61,7 +61,7 @@ The extension provides autocomplete for:
 
 Example:
 
-```tiny
+```js
 const items = [1, 2, 3];
 
 items.
@@ -70,7 +70,7 @@ items.
 
 Inside classes:
 
-```tiny
+```js
 class Validator {
     field errors: array = [];
 
@@ -96,7 +96,7 @@ Hover over symbols to see useful information:
 
 Example:
 
-```tiny
+```js
 fn greet(name: string): string {
     return "Hello " + name;
 }
@@ -119,7 +119,7 @@ The LSP reports common issues while editing:
 
 Example:
 
-```tiny
+```js
 const user = User();
 
 user.missingMethod();
@@ -169,7 +169,7 @@ Jump to definitions for:
 
 Example:
 
-```tiny
+```js
 import "models.tiny" as models;
 
 const post = models.Post();
@@ -183,11 +183,11 @@ Go to definition on `Post` jumps to the exported class in `models.tiny`.
 
 Function and method calls show parameter help while typing:
 
-```tiny
+```js
 io.println(
 ```
 
-```tiny
+```js
 post.init(id, title, body, author)
 ```
 
@@ -246,7 +246,7 @@ The extension understands many Tiny language features, including:
 
 ## Example
 
-```tiny
+```js
 import std "io";
 import std "time";
 
