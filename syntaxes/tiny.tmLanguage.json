@@ -117,7 +117,7 @@
         },
         {
           "name": "keyword.control.declaration.tiny",
-          "match": "\\b(class|enum|embed|fn|let|const|namespace)\\b"
+          "match": "\\b(class|enum|embed|defer|lock|fn|let|const|namespace)\\b"
         },
         {
           "name": "keyword.control.flow.tiny",
@@ -240,7 +240,7 @@
         },
         {
           "name": "variable.other.read.tiny",
-          "match": "\\b(?!import|std|as|export|defer|class|enum|embed|fn|let|const|return|if|else|while|for|instanceof|in|match|break|continue|field|private|public|try|catch|finally|throw|spawn|await|and|or|typeof|true|false|null|undefined|this\\b)[a-z_][A-Za-z0-9_]*\\b"
+          "match": "\\b(?!import|std|as|export|lock|defer|class|enum|embed|fn|let|const|return|if|else|while|for|instanceof|in|match|break|continue|field|private|public|try|catch|finally|throw|spawn|await|and|or|typeof|true|false|null|undefined|this\\b)[a-z_][A-Za-z0-9_]*\\b"
         }
       ]
     },
