@@ -187,10 +187,6 @@ Function and method calls show parameter help while typing:
 io.println(
 ```
 
-```js
-post.init(id, title, body, author)
-```
-
 ---
 
 ### Document Symbols
